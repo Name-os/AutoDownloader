@@ -26,7 +26,7 @@ def main():
     from os import remove, rmdir, mkdir
     from os.path import isdir, isfile
 
-    try: 
+    try:
         if not isdir(temp_folder): mkdir(temp_folder)
     except Exception as e: print(f"Error creating _temp folder\nError: {e}"); return
 
@@ -35,22 +35,19 @@ def main():
         try: request = get(link)
         except Exception as e: print(f"Error downloading .exe\nError: {e}"); continue
 
-        if not request.raise_for_status():
-            print("Content has sucessfuly downloaded")
-            try:
-                with open(temp_exe, "wb") as f:
-                    f.write(request.content)
-            except Exception as e:
-                print(f"Error ocurred creating .exe\nLink: {link}\nError: {e}")
+        print("Content has sucessfuly downloaded")
+        try:
+            with open(temp_exe, "wb") as f:
+                f.write(request.content)
+        except Exception as e:
+            print(f"Error ocurred creating .exe\nLink: {link}\nError: {e}")
 
-            print("Content downloaded")
-            print("Content installing, please take action")
+        print("Content downloaded")
+        print("Content installing, please take action")
 
-            try: run(temp_exe)
-            except Exception as e:
-                print(f"Error ocurred while running file\nError: {e}")
-
-        print("Program has encountered an error while downloading file")
+        try: run(temp_exe)
+        except Exception as e:
+            print(f"Error ocurred while running file\nError: {e}")
 
     try:
         if isfile(temp_exe):
