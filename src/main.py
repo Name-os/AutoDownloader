@@ -1,15 +1,22 @@
-def main():
-    import ctypes
+from subprocess import run
+from requests import get
+from os import remove, rmdir, mkdir, walk
+from os.path import isdir, isfile, join
+import threading
+import ctypes
 
+input_txt = r"apps.txt"
+temp_exe = r"_temp/temp"
+temp_folder = r"_temp"
+
+def main():
+    #checking if admin
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print("Please restart this script as administrator")
         input("Press enter to continue\n> ")
         return
 
-    input_txt = r"apps.txt"
-    temp_exe = r"_temp/temp.exe"
-    temp_folder = r"_temp"
-
+    #opening the links file
     try:
         with open(input_txt, "r", encoding="utf-8") as f:
             links = f.read().split()
@@ -18,41 +25,39 @@ def main():
         print("Input file does not exist")
         print("It has been automaticaly created for you")
         input("Press enter to continue\n> ")
+        return
     
-    if not links: print("Links is empty, please add installer to download"); return
+    #check if we have any links to download
+    if not links: print("Links is empty, please add installers to download"); return
 
-    from subprocess import run
-    from requests import get
-    from os import remove, rmdir, mkdir
-    from os.path import isdir, isfile
-
+    #create the temp folder
     try:
         if not isdir(temp_folder): mkdir(temp_folder)
     except Exception as e: print(f"Error creating _temp folder\nError: {e}"); return
 
+    #download the apps
+    threads = []
     for num, link in enumerate(links):
-        print(f"Fetching App {num + 1}...")
-        try: request = get(link)
-        except Exception as e: print(f"Error downloading .exe\nError: {e}"); continue
+        threads.append(threading.Thread(target=fetch_app, args=(num, link)))
+        threads[-1].start()
+    
+    for thread in threads: thread.join() #wait for all threads to finish downloading
 
-        print("Content has sucessfuly downloaded")
-        try:
-            with open(temp_exe, "wb") as f:
-                f.write(request.content)
-        except Exception as e:
-            print(f"Error ocurred creating .exe\nLink: {link}\nError: {e}")
+    print("Content installing, please take action")
 
-        print("Content downloaded")
-        print("Content installing, please take action")
-
-        try: run(temp_exe)
+    #run all of the apps
+    for i in range(len(links)):
+        try: run(temp_exe + str(i+1))
         except Exception as e:
             print(f"Error ocurred while running file\nError: {e}")
 
+    #clean up the temp folder
     try:
-        if isfile(temp_exe):
-            print("Deleting .exe")
-            remove(temp_exe)
+        for full_path, _, files in walk(temp_folder):
+            for file in files:
+                if isfile(join(full_path, file)):
+                    print(f"Deleting {file}")
+                    remove(join(full_path, file))
         print("Deleting _temp")
         rmdir(temp_folder)
     except Exception as e:
@@ -60,5 +65,18 @@ def main():
     
     print("Complete.")
     input("Press enter to exit script\n> ")
+
+def fetch_app(num, link):
+    print(f"Fetching App {num + 1}...")
+    try: request = get(link)
+    except Exception as e: print(f"Error downloading .exe\nError: {e}"); return
+
+    print("Content has sucessfuly downloaded")
+    exe_name = temp_exe + str(num+1)
+    try:
+        with open(exe_name + ".exe", "wb") as f:
+            f.write(request.content)
+    except Exception as e:
+        print(f"Error ocurred creating .exe\nLink: {link}\nError: {e}")
 
 main()
