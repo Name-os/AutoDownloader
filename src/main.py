@@ -1,4 +1,4 @@
-from subprocess import run
+from subprocess import Popen
 from requests import get
 from os import remove, rmdir, mkdir, walk
 from os.path import isdir, isfile, join
@@ -45,12 +45,6 @@ def main():
 
     print("Content installing, please take action")
 
-    #run all of the apps
-    for i in range(len(links)):
-        try: run(temp_exe + str(i+1))
-        except Exception as e:
-            print(f"Error ocurred while running file\nError: {e}")
-
     #clean up the temp folder
     try:
         for full_path, _, files in walk(temp_folder):
@@ -67,6 +61,7 @@ def main():
     input("Press enter to exit script\n> ")
 
 def fetch_app(num, link):
+    #download the apps
     print(f"Fetching App {num + 1}...")
     try: request = get(link)
     except Exception as e: print(f"Error downloading .exe\nError: {e}"); return
@@ -78,5 +73,10 @@ def fetch_app(num, link):
             f.write(request.content)
     except Exception as e:
         print(f"Error ocurred creating .exe\nLink: {link}\nError: {e}")
+
+    #run the correct .exe
+    try: Popen(exe_name)
+    except Exception as e:
+        print(f"Error ocurred while running file\nError: {e}")
 
 main()
